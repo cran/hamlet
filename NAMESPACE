@@ -1,0 +1,4 @@
+exportPattern("^match")
+exportPattern("^mem")
+exportPattern("^mix")
+export(mixplot, hmap, extendsymrange, smartjitter)
