@@ -1,0 +1,262 @@
+% \VignetteIndexEntry{Introduction to hamlet}
+\documentclass[a4paper]{article}
+
+\title{Step-by-step user instructions to the hamlet-package}
+\author{Teemu Daniel Laajala}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\pagebreak
+
+
+\noindent \texttt{Hamlet} is an R package intended for the statistical analysis of pre-clinical studies. This document is a basic introduction to the functionality of \texttt{hamlet} and a general overview to the analysis workflow of preclinical studies.
+
+This document is structured as follows: First, a general overview to inputting and processing the raw data is presented. Second, functionality is presented for the processing of pre-intervention data. Finally, functionality is presented for the post-intervention period, along with brief discussion on the differences between non-matched and matched statistical approaches. Each section comes with a list of useful functions specific for the subtask.
+
+Latest version of \texttt{hamlet} is available in the Comprehensive R Archive Network (CRAN, http://cran.r-project.org/). CRAN mirrors are by default available in the installation of R, and the \texttt{hamlet} package is installable using the R terminal command: \texttt{install.packages("hamlet")}. This should prompt the user to select a nearby CRAN mirror, after which the installation of \texttt{hamlet} is automatically performed. After the \texttt{install.packages}-call, the \texttt{hamlet} package can be loaded with either command \texttt{library("hamlet")} or \texttt{require("hamlet")}.
+
+The following notation is used in the document: R commands, package names and function names are written in \texttt{typewriter font}. The notation of format \texttt{pckgName::funcName} indicates that the function \texttt{funcName} is called from the package \texttt{pckgName}. If only the function name is given, this indicates that it is located in the base package in R and is thus always available.
+
+\section{Analysis workflow}
+
+Two different types of case-control setups for the analysis of pre-clinical are presented in Fig. \ref{fig:workflow}.
+
+The type A experiment design in Fig. \ref{fig:workflow} is preferred, as matching is performed before allocation to the experiment groups, and therefore improves the balance and power of the experiment. The alternate experiment type B requires the bipartite matching task, where suitable pairs of individuals are identified over two or more groups that existed prior to matching. This document presents a dataset where experiment design type A was used.
+
+\begin{figure}
+\centering
+\includegraphics{workflow.pdf}
+\caption{Analysis workflow for pre-clinical experiments \label{fig:workflow}}
+\end{figure}
+
+\section{Loading data into R}
+
+The \texttt{hamlet} package comes pre-installed with the VCaP dataset, which is used here to illustrate the workflow. Two different formats of the data are provided. First one is available in \texttt{data(vcapwide)}, which includes the data in the so-called \emph{wide} format. In this data format the columns are indicators for different variables available for the experimental unit (here animal). For example, the two first rows of observations are extracted with:
+
+<<>>=
+require(hamlet)
+data(vcapwide)
+vcapwide[1:2,]
+@
+
+\noindent An another format of the same dataset is provided in \texttt{data(vcaplong)}. This is the data from the same experiment in the so-called \emph{long} format, where only few column variables are available (here PSA or body weight), and the different observations belonging to a single experimental unit (here animal) are distinguished using the measurement time (variable \emph{Week} or \emph{DrugWeek}). Again, first few rows of the dataset:
+
+<<>>=
+data(vcaplong)
+vcaplong[1:3,]
+@
+
+The former \emph{wide} format is useful for summarizing multiple variables when constructing distance matrices for the data. The latter \emph{long} format is typically used for longitudinal mixed-effects modeling where observations are correlated through time.
+
+\subsection{Excel format data}
+
+\begin{figure}
+\centering
+\includegraphics[resolution=96]{excelexample.JPG}
+\caption{Example Excel-format data, where rows correspond to individuals and columns to different characteristics at baseline. The single sheet data can be easily exported in a text-based format such as CSV. \label{fig:excel}}
+\end{figure}
+
+An example view of a pre-clinical dataset is given in Fig. \ref{fig:excel}. Such a dataset can be saved in an R-friendly format by selecting option \texttt{File > Save As} and \texttt{CSV (Comma delimited)} as the save format in MS Excel.
+
+\subsection{CSV-files}
+
+CSV (Comma Delimited Values) is a suitable text-based format for the data to be read into R using either the function \texttt{read.table} or \texttt{read.csv}. 
+The above presented example CSV file can be opened with the following command:
+
+<<>>=
+ex <- read.table(file="example.csv", sep=";", dec=",", stringsAsFactors=F, header=T)
+ex
+@
+
+The above presented CSV file was read into R using \texttt{read.table} with the following parameters: \texttt{file="example.csv"} is the first parameter and indicates the input file from our current working directory. The working directory may be changed using the command \texttt{setwd} or by including its path in the file parameter, i.e. \texttt{file="D://my//current//windows//working//directory//example.csv"}. \texttt{sep=";"} indicates that the values on each line are separated with the symbol ';', as is the format defined for the CSV delimited files with ","-decimals. This could also be a value such as \texttt{\textbackslash{}tab}} or \texttt{" "} (space). \texttt{dec=","} indicates that the "," symbol is used for decimals. The default value for indicating decimals is "." otherwise. \texttt{stringsAsFactors=F} indicates that strings should not be handled as factors. Factors are an R class, where a character string may only take instances of a predetermined set of strings. As each of our animal IDs - which are read as strings - are unique, it is generally more flexible to conserve them as character strings. Lastly, \texttt{header=T} indicates that the text CSV file has a header row as the first row, which includes names for each column. If this value is set to \texttt{header=F} or \texttt{header=FALSE}, the first row of the text file is read as the first observation and the columns are left unnamed.
+
+Depending on the country of origin, the CSV files may use "." decimals and "," separator, or alternatively (as assumed here) "," decimals" and ";" separators.
+
+
+List of useful functions:
+\begin{itemize}
+\item \texttt{read.table}, \texttt{read.csv}
+\item \texttt{data}: \texttt{data(vcaplong)}, \texttt{data(vcapwide)}
+\end{itemize}
+
+\section{Distance and dissimilarity functions}
+
+A distance or dissimilarity function is used to describe the amount of (dis-)similarity between two experimental units. Common choices for computing the amount of similarity between two vectors $\mathbf{x}$ and $\mathbf{y}$ include:
+
+\begin{itemize}
+\item Euclidean distance:
+	$\mathrm{d}(\mathbf{x},\mathbf{y}) = \sqrt{(x_1-y_1)^2 + (x_2-y_2)^2 + \cdots + (x_n-y_n)^2} = \sqrt{\sum_{i=1}^n (x_i-y_i)^2}.$
+\item Standardized Euclidean distance:
+	$\sqrt{\sum_{i=1}^N  {(x_i - y_i)^2 \over s_{i}^2}}$
+\item Mahalanobis distance:
+	$\sqrt{(x - y)^T S^{-1} (x - y)}$
+\end{itemize}
+
+\noindent Here, $\mathbf{x}$ and $\mathbf{y}$ are expected to be observation vectors of length $N$, where each dimension describes the measured value for a particular covariate. $S$ describes the covariance-variance matrix between covariates, and therefore incorporates inter-correlations between variables. The standard deviation $s$ may be used to standardize differences in variation over the dimensions.
+
+<<echo=FALSE>>=
+d <- dist(ex[,2:4]) # By default Euclidean distance
+d <- as.matrix(d)
+d <- round(d, 2) # distance matrix d
+@
+
+<<results=tex,echo=FALSE>>=
+require(xtable)
+print(xtable(d, caption="Euclidean distance matrix D for 18 animals", label="tab:eucld"), scalebox=0.7)
+@
+
+Table \ref{tab:eucld} shows the Euclidean distance matrix for the 18 animals presented in Figure \ref{fig:excel}.
+
+
+List of useful functions:
+\begin{itemize}
+\item \texttt{dist} includes many common distance and dissimilarity functions (Euclidean by default, others: \texttt{method="manhattan"}, \texttt{method="maximum"}, \texttt{method="minkowski"}
+\item \texttt{cluster::daisy}, daisy includes Gower's dissimilarity for mixed data (parameter \texttt{metric="gower"})
+\end{itemize}
+
+\section{Non-bipartite optimal matching of animals at baseline}
+
+The non-bipartite optimal matching problem may be solved using the provided branch and bound algorithm:
+
+<<>>=
+sol <- match.bb(d, g=3)
+submatches <- paste("Submatch_", LETTERS[1:6][sol$solution], sep="")
+names(submatches) <- names(sol$solution)
+submatches
+@
+
+The \texttt{match.bb} function returns the solution to the optimal matching task. It takes as input a distance matrix \texttt{d}, as is indicated in the function call \texttt{match.bb(d, g=3)} (notice that \texttt{d} was defined before). Furthermore, the size of the submatches is defined using the parameter \texttt{g=3}. This value indicates that the optimal matching algorithm minimizes edges within triplets. Each observation has to belong to a triplet called a submatch.
+
+
+List of useful functions:
+\begin{itemize}
+\item Multigroup non-bipartite matching: \texttt{hamlet::match.bb}
+\item Paired non-bipartite matching: \texttt{hamlet::match.bb}, \texttt{nbpMatching::nonbimatch}
+\item Paired bipartite matching: \texttt{optmatch::fullmatch}
+\end{itemize}
+
+\section{Randomization based on matched individuals}
+
+The submatches identified in the above section should not be mistaken for the randomly allocated intervention groups. The final intervention groups are obtained by dividing members of each submatch in the found solution to a separate treatment arm. Since the within-submatch distances are minimized, this guarantees that comparable individuals are randomly divided to separate arms:
+
+<<>>=
+ex[,"Submatch"] <- submatches
+set.seed(1) # for reproducibility
+ex[,"AllocatedGroups"] <- match.allocate(ex[,"Submatch"])
+@
+
+<<results=tex,echo=FALSE>>=
+require(xtable)
+print(xtable(ex, caption="The result table in variable \\texttt{ex} after performing the optimal matching and allocation.", label="tab:extable"), scalebox=0.8)
+@
+
+List of useful functions:
+\begin{itemize}
+\item Multigroup non-bipartite matching: \texttt{hamlet::match.bb}
+\item Paired non-bipartite matching: \texttt{hamlet::match.bb}, \texttt{nbpMatching::nonbimatch}
+\item Paired bipartite matching: \texttt{optmatch::fullmatch}
+\end{itemize}
+
+\section{Visualizations for pre-clinical data}
+
+Various visualization functions are available to illustrate baseline balance. For example, the boxplots in respect to allocation groups can be plotted using a command such as \texttt{boxplot}, which is illustrated in Figure \ref{boxplot}.
+
+\begin{figure}
+\centering
+<<fig=true,echo=true>>=
+boxplot(PSA.week.10..ug.l. ~ AllocatedGroups, data = ex, range=0, 
+xlab="Group", ylab="PSA week 10 ul/g")
+@
+\caption{Boxplots for the week 10 PSA in the example allocation \label{boxplot}}
+\end{figure}
+
+Mixed variable scatterplots with annotations for the submatches or allocation groups are plotted using the function \texttt{hamlet::mixplot}, which can be seen in Figures \ref{mixplot1} or \ref{mixplot2} respectively.
+
+\begin{figure}
+\centering
+<<fig=true,echo=true>>=
+mixplot(ex[,2:5], pch=16)
+@
+\caption{Test mixplot with submatch labels\label{mixplot1}}
+\end{figure}
+
+\begin{figure}
+\centering
+<<fig=true,echo=true>>=
+mixplot(ex[,c(2:4,6)], pch=16)
+@
+\caption{Test mixplot with allocation group labels\label{mixplot2}}
+\end{figure}
+
+
+A common way to illustrate distance matrices is through heatmaps, along with hierarchical clustering to connect similar individuals (Figure \ref{fig:heatmap}).
+
+\begin{figure}
+\centering
+<<fig=true>>=
+heatmap(d)
+@
+\caption{Heatmap for the 18x18 distance matrix\label{fig:heatmap}}
+\end{figure}
+
+
+List of useful functions:
+\begin{itemize}
+\item Scatterplots etc: \texttt{hamlet::mixplot}, \texttt{plot}, \texttt{boxplot}
+\item Heatmaps: \texttt{hamlet::hmap}, \texttt{heatmap}, \texttt{gplots::heatmap.2}
+\end{itemize}
+
+\section{Paired vs. non-paired testing}
+
+Pairing of samples aims to increase statistical power of tests through connecting the same measurement over two conditions. In the pre-clinical context, we incorporate the matching information from prior to interventions (Figure \ref{fig:workflow}) in order to find the connecting measurements. As the submatches were used to couple measurements prior to interventions, it is natural to use this information for pairing the observations in the post-intervention tests.
+
+If pairing is not performed, the statistical power may not be sufficient in the tests, as the populations are assumed to relatively homogeneous and no prognostic information is incorporated to the testing procedure:
+
+<<>>=
+veh <- vcapwide[vcapwide[,"Group"]=="Vehicle",
+	c("Submatch","PSAWeek10","BWWeek10","PSAWeek14")]
+mdv <- vcapwide[vcapwide[,"Group"]=="MDV",
+	c("Submatch","PSAWeek10","BWWeek10","PSAWeek14")]
+t.test(veh[,"PSAWeek14"], mdv[,"PSAWeek14"])
+@
+
+However, the submatches are used to couple best comparable measurements. For example, in the VCaP experiment the week 10 was baseline and its PSA and body weight contain prognostic information necessary for weighting post-intervention tests. During the experiment weeks 11 to 14 interventions took place. The column "Submatch" given in the datasets \texttt{vcapwide} and \texttt{vcaplong} are the submatches that occurred in the actual matching and randomization task when the experiment itself was performed. The week 10 information in connection to the submatches were:
+
+<<>>=
+veh <- veh[order(veh[,"Submatch"]),]
+mdv <- mdv[order(mdv[,"Submatch"]),]
+@
+
+<<results=tex,echo=FALSE>>=
+mat1 <- cbind(Veh.PSAWeek10 = veh[,"PSAWeek10"], MDV.PSAWeek10 = mdv[,"PSAWeek10"])
+rownames(mat1) <- veh[,"Submatch"]
+print(xtable(mat1, caption="Submatches in the real VCaP experiment, per PSA at week 10 in tumors allocated to the Vehicle and MDV groups", label="tab:mat1"), scalebox=0.9)
+@
+
+<<results=tex,echo=FALSE>>=
+mat2 <- cbind(Veh.BWWeek10 = veh[,"BWWeek10"], MDV.BWWeek10 = mdv[,"BWWeek10"])
+rownames(mat2) <- veh[,"Submatch"]
+print(xtable(mat2, caption="Submatches in the real VCaP experiment, per body weight at week 10 in tumors allocated to the Vehicle and MDV groups", label="tab:mat2"), scalebox=0.9)
+@
+
+
+Tables \ref{tab:mat1} and \ref{tab:mat2} show the prognostic baseline information in terms of PSA and body weight that is connected to the submatches. These submatches are used for pairing observations in comparing MDV intervention to the vehicle, which results in a noticeable increase in statistical power in even conventional tests:
+
+<<>>=
+t.test(veh[,"PSAWeek14"], mdv[,"PSAWeek14"], paired=TRUE)
+@
+
+For more refined statistical testing, the longitudinal profiles of a pre-clinical experiment can be modeled using the \texttt{lme4}-package.  Functions are provided in the \texttt{hamlet}-package for this purpose.
+
+List of useful functions:
+\begin{itemize}
+\item MEM-modeling packages: \texttt{lme4}, \texttt{lmerTest}, \texttt{nlme}
+\item MEM-modeling in \texttt{hamlet}: \texttt{hamlet::mem.getcomp}, \texttt{hamlet::mem.plotran}, \texttt{hamlet::mem.plotresid}
+\end{itemize}
+
+
+\end{document}

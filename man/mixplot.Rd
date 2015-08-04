@@ -7,9 +7,19 @@ Scatterplot for mixed type data
 This function plots a scatterplot similar to the default plot-function, with the difference that factor/character fields in input data.frame are handled as categorical variables. These categorical variables are color-coded and handled separately in marginal distributions.
 }
 \usage{
-mixplot(x, main = NA, legend = T, col = palette(), na.lines = T, 
-origin = F, marginal = F, lhei, lwid, verb = 0, ...)
-}
+mixplot(x, 
+	main = NA, 
+	match, 
+	func = function(x, y, par) 
+		{ segments(x0 = x[1], y0 = x[2], x1 = y[1], y1 = y[2], col = par)}, 
+	legend = T, 
+	col = palette(), na.lines = T, 
+	origin = F, 
+	marginal = F, 
+	lhei, 
+	lwid, 
+	verb = 0,
+...)}
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
@@ -17,6 +27,12 @@ A data.frame or a matrix of observations. Typically x should be a data.frame, wh
 }
   \item{main}{
 Main title plotted on top of the figure
+}
+  \item{match}{
+A matching matrix (e.g. produced by hamlet::match.vec2mat) or a matching vector (e.g. produced by hamlet::match.mat2vec) that indicates with different values if certain observations should be connected.
+}
+  \item{func}{
+The function to apply to each pair of observations 'x' and 'y'. By default, it is a segment line in 2 dimensions (each individual bivariate panel). Segment line color is indicated by the matching vector or individual element in the matching matrix. Thus 0-values indicate no line, while other values are used to annotate submatches. 'par' is the index of the submatch, and by default indicate the colors.
 }
   \item{legend}{
 Should an automated legend be generated

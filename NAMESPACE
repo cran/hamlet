@@ -1,4 +1,11 @@
+# Exports
 exportPattern("^match")
 exportPattern("^mem")
 exportPattern("^mix")
-export(mixplot, hmap, extendsymrange, smartjitter)
+export(mixplot, extendsymrange, smartjitter)
+export(hmap, hmap.key, hmap.annotate)
+# Imports
+import(grDevices)
+import(graphics)
+import(stats)
+import(utils)

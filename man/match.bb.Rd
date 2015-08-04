@@ -46,7 +46,7 @@ The function returns a list of objects, where elements are
 \item{cost }{Final cost value of the target function in the minimization task}
 }
 \references{
-Laajala TD, Kaur A, Knuuttila M, Westermarck J, et al. (2014) Optimal Matching, Randomization and Statistical Modeling of Hierarchical Baseline Variables in Preclinical Cancer Studies. Submitted
+Laajala TD, Kaur A, Knuuttila M, Aho E, Oksala R, et al. (2014) Optimal Matching, Randomization and Statistical Modeling of Hierarchical Baseline Variables in Preclinical Cancer Studies. Submitted
 }
 \author{
 Teemu Daniel Laajala <teelaa@utu.fi>

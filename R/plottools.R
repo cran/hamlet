@@ -1,9 +1,18 @@
+#
+# Various plotting functions, especially for mixed and/or matched data
+#
+
 # Scatterplot function for mixed type (numerical and categorical) variables with marginal distributions in each scatterplot
 mixplot <- function(
 	# Data frame or a matrix
 	x,
 	# Main title
 	main = NA,
+	# If a matching matrix of size nrow(x) x ncol(x) or a matching vector of length(x) is provided,
+	# these are annotated in the dimensions by connecting the observations with lines
+	# For a matching matrix different values are given as parameter 'par'
+	match,
+	func = function(x, y, par) { segments(x0=x[1], y0=x[2], x1=y[1], y1=y[2], col=par) },
 	# If legend should be constructed and plotted
 	legend = T,
 	# Colors for the categories or single observations if categories are not present
@@ -55,11 +64,13 @@ mixplot <- function(
 	# If no categorical variables available, introduce artificial category "Observation" which affects all
 	if(ncat==0){
 		cats <- rep("Observation", times=nrow(x))
-		wcats <- 1:nrow(x)
+		# Old, wrong!
+		#wcats <- 1:nrow(x)
+		wcats <- rep(1, times=nrow(x))
 	}else{
 	# Else map observations to categories based on ctgr-type columns
 		cats <- apply(x[,wcat,drop=F], MARGIN=1, FUN=function(x) paste(x, collapse=", "))
-		wcats <- match(cats, unique(cats))
+		wcats <- base::match(cats, unique(cats))
 	}
 	# Colors for the categories per each observation
 	col <- rep(col, length.out=length(wcats))[wcats]
@@ -126,9 +137,29 @@ mixplot <- function(
 		par(mar=c(0,0,0,0)); plot.new(); plot.window(xlim=c(-1,1), ylim=c(-1,1))
 		text(0,0, main)
 	}
-	
+
+	# If user wants to annotate matches
+	if(!missing(match)){
+		# Process matching matrix to a matching vector
+		if(class(match) %in% c("matrix", "data.frame")){
+			match <- match.mat2vec(as.matrix(match))
+		}
+		# Unique matching elements
+		mm <- unique(match)
+		# Which element belongs to which unique element
+		ms <- lapply(mm, function(z) which(match==z))
+		# The 2 rows are pairs, columns indicate each pair-combination of observations to connect
+		ms <- lapply(ms, function(z) { if(length(z)>1) { combn(z, 2) } else NA })
+		if(verb>=1){
+			print("Matching information processed:")
+			print(ms)
+		}
+		plotmatch <- T
+	}else{
+		plotmatch <- F
+	}
 	# Sub plotting function for each 1x1 or 2x2 subplot depending on marginal type
-	subplox <- function(x, marginal, labels = F, ...){
+	subplox <- function(x, marginal, labels = F, plotmatch = F, ...){
 		# Should variable labels be shown (and thus larger margins)
 		if(labels){
 			mar <- c(4,4,1,1)
@@ -139,7 +170,7 @@ mixplot <- function(
 		if(!as.character(marginal) %in% c("0", "FALSE", "no", "none")){
 			martemp <- mar; martemp[c(1,3)] <- 0; par(mar=martemp)			
 			# Marginals
-			plot.new(); plot.window(xlim=extendrange(x[,1]), ylim=c(-1,1))
+			plot.new(); plot.window(xlim=grDevices::extendrange(x[,1]), ylim=c(-1,1))
 			# Rug
 			if(any(as.character(marginal) %in% c("1", "TRUE", "rug"))){
 				for(i in 1:nrow(x)) abline(v=x[i,1], col=col[i], lwd=2)
@@ -160,6 +191,15 @@ mixplot <- function(
 		# Actual scatterplot
 		par(mar=mar)
 		plot(x, xlim=extendrange(x[,1]), ylim=extendrange(x[,2]), ...)
+		# Matching combinations, pairwise-applied 'func' to data points belonging to same submatch
+		if(plotmatch){
+			lapply(1:length(ms), FUN=function(z){
+				if(is.matrix(ms[[z]]))
+				lapply(1:ncol(ms[[z]]), FUN=function(q){
+					func(x=as.numeric(x[ms[[z]][1,q],]), y=as.numeric(x[ms[[z]][2,q],]), par=z)
+				})
+			})
+		}
 		# Origin lines if desired
 		if(origin){
 			abline(h=0, col="grey")
@@ -195,10 +235,10 @@ mixplot <- function(
 	# Plot actual scatterplots
 	# If only one numeric column handle this exceptionally
 	if(nnum==1){
-		subplox(x=x[,which(wnum)[1]], marginal=marginal, labels = T, col=col, ...)
+		subplox(x=x[,which(wnum)[1]], marginal=marginal, labels = T, col=col, plotmatch = plotmatch, ...)
 	# Else multiple scatterplots
 	}else if(nnum==2){
-		subplox(x=x[,which(wnum)[1:2]], marginal=marginal, labels = T, col=col, ...)
+		subplox(x=x[,which(wnum)[1:2]], marginal=marginal, labels = T, col=col, plotmatch = plotmatch, ...)
 	}else{
 		for(row in 1:nnum){
 			for(column in 1:nnum){
@@ -219,7 +259,7 @@ mixplot <- function(
 						plot.new(); plot.window(xlim=c(-1,1), ylim=c(-1,1))	
 					}
 				}else{
-					subplox(x=x[,rev(which(wnum)[c(row,column)])], marginal=marginal, col=col, ...)
+					subplox(x=x[,rev(which(wnum)[c(row,column)])], marginal=marginal, col=col, plotmatch = plotmatch, ...)
 				}
 			}
 		}
@@ -245,6 +285,8 @@ mixplot <- function(
 }
 
 # Plot-region based heatmap
+# 
+# Function tries to compatible with such functions as 'heatmap' in base package or 'heatmap.2' in gplots-package
 hmap <- function(
 	# Input data matrix to plot
 	x,
@@ -253,16 +295,19 @@ hmap <- function(
 	#
 	# Whether we want to add to an existing region or create a new one
 	add = F,
-	# x and y axis limits in the heatmap
-	xlim=c(0,1),
-	ylim=c(0,1),
+	# x and y axis limits in the heatmap itself
+	# NOTE! This does not include the top and left dendrograms or row and column labels 
+	# (see parameters leftlim, toplim, rightlim, bottomlim for these)
+	xlim=c(0.2,0.8),
+	ylim=c(0.2,0.8),
 	
 	# Colors to use
 	col = heat.colors(10),
 	
-	#
-	# Border Settings for the heatmap bins
-	# Should be a matrix of equal dimensions to x
+	# Border and line settings for the heatmap bins
+	# Should be matrices of equal dimensions to x
+	# NOTE! These are not reordered according to the marginal dendrograms, 
+	# but instead affect the absolute rectangle positions at the plot
 	#
 	# Color for borders in the heatmap bins
 	border = matrix(NA, nrow=nrow(x), ncol=ncol(x)),
@@ -270,6 +315,49 @@ hmap <- function(
 	lty = matrix("solid", nrow=nrow(x), ncol=ncol(x)),
 	# Line width for borders in the heatmap bins
 	lwd = matrix(1, nrow=nrow(x), ncol=ncol(x)),
+	
+	# Settings / functions for the marginal hierarchical clusterings
+	#
+	# Hierarchical clustering function
+	hclustfun = hclust, 
+	# Distance function to provide to hclustfun
+	distfun = dist,
+	# Reordering function used to reorder rows and columns while preserving legality of clustering
+	reorderfun = function(d, w) reorder(d, w),
+	# Function used for plotting name labels
+	textfun = function(xseq, yseq, labels, type="row", ...){ if(type=="col") par(srt=90); text(x=xseq, y=yseq, labels=labels, ...); if(type=="col") par(srt=0) },
+	# Should symmetricity in rows/columns be enforced
+	symm = F,
+	# Reordering of rows
+	Rowv=NULL,
+	# Reordering of columns
+	Colv=if(symm) Rowv else NULL,
+	# x-axis limits for plotting the dendrogram to the left
+	leftlim = c(0, 0.2),
+	# y-axis limits for plotting the dendrogram to the top
+	toplim = c(0.8, 1),
+	# x-axis limits for plotting row names to the right
+	rightlim = c(0.8, 1),
+	# y-axis limits for plotting column names to the bottom
+	bottomlim = c(0, 0.2),
+	# Type of clustering visualization, by default "rect"=rectangular, can be also "tri"angular
+	type = "rect",
+	
+	# Should data matrix 'x' be scaled according to 'row's, 'column's or 'none'
+	# NOTE! While 'heatmap' by default scales by rows, here assumed user does not want scaling by default
+	scale = c("none", "row", "column"),
+	# Should missing values be removed
+	na.rm = T,
+	# Number of discrete bins to divide the data to
+	nbins = length(col),
+	# Value ranges for the discrete binning
+	valseq = seq(from=min(x, na.rm=na.rm), to=max(x, na.rm=na.rm), length.out=nbins),	
+	# Should row names be plotted (using text-func),
+	# if boolean, then rownames(x) will be plotted. If it is a custom vector of length nrow(x), then these names will be plotted instead
+	namerows = T,
+	# Should column names be plotted (using text-func)
+	# if boolean, then colnames(x) will be plotted. If it is a custom vector of length ncol(x), then these names will be plotted instead
+	namecols = T,
 	
 	# Additional parameters
 	...
@@ -292,29 +380,389 @@ hmap <- function(
 		lwd = matrix(lwd, nrow=nrow(x), ncol=ncol(x))
 	}
 	
-	# Value range
-	nbins = length(col)
-	valseq = seq(from=min(x, na.rm=T), to=max(x, na.rm=T), length.out=nbins)
-	# Finding color bins for the values according to the interval number in palette
-	intervalmat = matrix(findInterval(x=x, vec=valseq), nrow=nr, ncol=nc)
-	
-	xseq = seq(from=xlim[1], to=xlim[2], length.out=nc+1)
-	# Reversing the y-coordinates, otherwise the heatmap will be upside-down
-	yseq = rev(seq(from=ylim[1], to=ylim[2], length.out=nr+1))
-	
 	# If requested, create a new plotting region
 	if(!add){
 		plot.new()
-		plot.window(xlim=xlim, ylim=ylim)
+		plot.window(xlim=range(leftlim,xlim,rightlim), ylim=range(ylim,toplim,bottomlim))
 	}
 	
-	# Plotting the rectangles
-	for(i in 1:(nr-1)){
-		for(j in 2:nc){
-			rect(xleft=xseq[i], ybottom=yseq[j], xright=xseq[i+1], ytop=yseq[j-1], col=col[intervalmat[i,j]], border=border[i,j], lty=lty[i,j], lwd=lwd[i,j])
+	# Recursive function for manually plotting dendrograms (hidden)
+	plotdend <- function(
+		dend, # dendrogram object
+		horiz=F, # Horizontal (by default vertical)
+		left=0, # How many leaves are to the left and to the right, used to determine center 
+		type="rect", # "rect"angular (or else: triangular)
+		new=T, # Make new graphics device
+		leafpos = seq(from=0, to=attr(dend, "members"), length.out=(attr(dend, "members")+1)), # positions for the leafs
+		normleafpos = T, # Should leaf positions be normalized so the ends will match with the centers of respective box elements
+		xlim=c(0, attr(dend, "members")),
+		ylim=c(0, attr(dend, "height")),
+		xscale = abs(xlim[2] - xlim[1])/attr(dend, "members"), # x-axis scaling factors according to chosen coordinates
+		yscale = abs(ylim[2] - ylim[1])/attr(dend, "height"), # y-axis scaling factors according to chosen coordinates
+		revx = F, # Should x-axis coordinates be reversed
+		revy = F, # Should y-axis coordinates be reversed
+		...
+		){ 
+		if(normleafpos) leafpos <- unlist(lapply(1:(length(leafpos)-1), FUN=function(z) mean(c(leafpos[z], leafpos[z+1]))))
+		if(new){
+			plot.new()
+			if(!horiz) plot.window(xlim=xlim, ylim=ylim)
+			if(horiz) plot.window(xlim=ylim, ylim=xlim)
+		}
+		if(!attr(dend, "members")==1 ){
+			# Branches into 2:
+			leftmost <- leafpos[left+1]
+			if(is.null(attr(dend, "midpoint"))){
+				mid <- 0
+			}else{
+				mid <- attr(dend, "midpoint")
+			}
+			
+			# Compute node positions
+			leftleftmost <- left
+			rightleftmost <- left + attr(dend[[1]], "members") 
+			leftmid <- attr(dend[[1]], "midpoint")
+			if(is.null(leftmid)) leftmid <- 0
+			rightmid <- attr(dend[[2]], "midpoint")
+			if(is.null(rightmid)) rightmid <- 0
+
+			y0a <- ylim[1] + (attr(dend, "height")*yscale)
+			y0b <- ylim[1] + (attr(dend[[1]], "height")*yscale)
+			x0a <- xlim[1] + (leftmost + mid)*xscale
+			x0b <- xlim[1] + (leftmost + leftmid)*xscale
+			# For right branch
+			x1a <- xlim[1] + (leafpos[rightleftmost+1] + rightmid)*xscale
+			y1a <- ylim[1] + (attr(dend[[2]], "height")*yscale)
+			if(revx){
+				x0a <- xlim[2] - x0a
+				x0b <- xlim[2] - x0b
+				x1a <- xlim[2] - x1a
+			}
+			if(revy){
+				y0a <- ylim[2] + leftlim[1] - y0a
+				y0b <- ylim[2] + leftlim[1] - y0b
+				y1a <- ylim[2] + leftlim[1] - y1a
+			}
+			
+			
+			# Draw left branch
+			# Rectangular branches
+			if(type=="rect"){
+				if(!horiz){
+					segments(x0 = x0a, y0 = y0a, x1 = x0b, y1 = y0a)
+					segments(x0 = x0b, y0 = y0a, x1 = x0b, y1 = y0b)
+				}else{
+					segments(y0 = x0a, x0 = y0a, y1 = x0b, x1 = y0a)
+					segments(y0 = x0b, x0 = y0a, y1 = x0b, x1 = y0b)
+				}
+			# Triangular branches
+			}else{
+				if(!horiz){
+					segments(x0 = x0a, y0 = y0a, x1 = x0b, y1 = y0b)
+				}else{
+					segments(y0 = x0a, x0 = y0a, y1 = x0b, x1 = y0b)				
+				}
+			}
+			# Draw right branch
+			# Rectangular branches
+			if(type=="rect"){
+				if(!horiz){
+					segments(x0 = x0a, y0 = y0a, x1 = x1a, y1 = y0a)
+					segments(x0 = x1a, y0 = y0a, x1 = x1a, y1 = y1a)
+				}else{
+					segments(y0 = x0a, x0 = y0a, y1 = x1a, x1 = y0a)
+					segments(y0 = x1a, x0 = y0a, y1 = x1a, x1 = y1a)
+				}
+			# Triangular branches
+			}else{
+				if(!horiz){
+					segments(x0 = x0a, y0 = y0a, x1 = x1a, y1 = y1a)
+				}else{
+					segments(y0 = x0a, x0 = y0a, y1 = x1a, x1 = y1a)
+				}
+			}
+			
+			# continue left branch
+			plotdend(dend[[1]], type = type, horiz = horiz, new = F, leafpos = leafpos, xlim=xlim, ylim=ylim, xscale = xscale, yscale = yscale, left = left, revx=revx, revy=revy, normleafpos = F)
+			# continue right branch
+			plotdend(dend[[2]], type = type, horiz = horiz, new = F, leafpos = leafpos, xlim=xlim, ylim=ylim, xscale = xscale, yscale = yscale, left = left + attr(dend[[1]], "members"), revx=revx, revy=revy, normleafpos = F)
 		}
 	}
+
+	# How reordering is to be done (rows)
+	if(is.null(Rowv)){ # Default reordering
+		Rowv <- rowMeans(x, na.rm = na.rm)
+	}
+	# Obtaining the dendrogram (rows)
+	if(inherits(Rowv, "dendrogram")){ # Custom provided dendrogram
+		dend.row <- Rowv
+		order.row <- order.dendrogram(Rowv)
+	}else if(!identical(Rowv, NA)){ # Default dendrogram
+		# Dendrogram for each row
+		dend.row <- as.dendrogram(hclustfun(distfun(x)))
+		dend.row <- reorderfun(dend.row, Rowv)
+		order.row <- order.dendrogram(dend.row)
+	}else{ # Omit dendrogram (Rowv is NA)
+		dend.row <- NULL
+		order.row <- 1:nrow(x)
+	}
+	# Plot the dendrogram (cols)
+	if(!is.null(dend.row) & !identical(Rowv, NA)){
+		plotdend(dend.row, horiz=T, xlim=ylim, ylim=leftlim, new=F, type=type, revy=T)
+	}
+
+	# How reordering is to be done (cols)
+	if(is.null(Colv)){ # Default reordering
+		Colv <- colMeans(x, na.rm = na.rm)
+	}
+	# Obtaining the dendrogram (cols)
+	if(inherits(Colv, "dendrogram")){ # Custom provided dendrogram
+		dend.col <- Colv
+		order.col <- order.dendrogram(Colv)
+	}else if(!identical(Colv, NA)){ # Default dendrogram
+		# Dendrogram for each col
+		dend.col <- as.dendrogram(hclustfun(distfun(t(x))))
+		dend.col <- reorderfun(dend.col, Colv)
+		order.col <- order.dendrogram(dend.col)
+	}else{ # Omit dendrogram (Colv is NA)
+		dend.col <- NULL
+		order.col <- 1:ncol(x)
+	}
+	# Plot the dendrogram (cols)
+	if(!is.null(dend.col) & !identical(Colv, NA)){
+		plotdend(dend.col, xlim=xlim, ylim=toplim, new=F, type=type)
+	}
+	
+	# Scaling (copied as in stats::heatmap for compatibility, default value 'none' though)
+	scale <- if (symm && missing(scale)) "none"
+	else match.arg(scale)
+	if (scale == "row") {
+		x <- sweep(x, 1L, rowMeans(x, na.rm = na.rm), check.margin = FALSE)
+		sx <- apply(x, 1L, sd, na.rm = na.rm)
+		x <- sweep(x, 1L, sx, "/", check.margin = FALSE)
+	}
+	else if (scale == "column") {
+		x <- sweep(x, 2L, colMeans(x, na.rm = na.rm), check.margin = FALSE)
+		sx <- apply(x, 2L, sd, na.rm = na.rm)
+		x <- sweep(x, 2L, sx, "/", check.margin = FALSE)
+	}	
+	
+	# Finding color bins for the values according to the interval number in palette
+	intervalmat = matrix(findInterval(x=x, vec=valseq), nrow=nr, ncol=nc)
+	
+	xmatseq = seq(from=xlim[1], to=xlim[2], length.out=nc+1)
+	# Reversing the y-coordinates, otherwise the heatmap will be upside-down
+	# y-axis runs [ymin, ymax] in different direction than rows are counted (first row is top-left corner)
+	ymatseq = rev(seq(from=ylim[1], to=ylim[2], length.out=nr+1))
+	
+	# Reorder rows and columns for the color intervals according to the respective dendrograms
+	intervalmat <- intervalmat[rev(order.row), order.col] # Notice that y-axis was reversed
+	
+	# Plotting the rectangles for the heatmap itself
+	for(row in 1:nr){
+		for(column in 1:nc){
+			rect(xleft=xmatseq[column], ybottom=ymatseq[row], xright=xmatseq[column+1], ytop=ymatseq[row+1], col=col[intervalmat[row, column]], border=border[row, column], lty=lty[row, column], lwd=lwd[row, column])
+		}
+	}
+	
+	# Plot names for rows and columns
+	# Custom row name vector provided
+	if(!missing(namerows) & length(namerows)>1){
+		rownames(x) <- namerows
+		namerows <- T
+	}
+	# No column names, using a sequence of column indices
+	else if(is.null(rownames(x))){
+		rownames(x) <- 1:nrow(x)
+	}
+	if(is.null(rownames(x))) rownames(x) <- 1:nrow(x)
+	rownam <- rownames(x)[order.row]
+	xseq <- rep((rightlim[2] + rightlim[1])/2, times=(nrow(x)))
+	yseq <- seq(from=ylim[1], to=ylim[2], length.out=(nrow(x)+1))
+	yseq <- unlist(lapply(1:(length(yseq)-1), FUN=function(z) mean(c(yseq[z], yseq[z+1]))))
+	rowtext <- list(xseq = xseq, yseq = yseq, rownam = rownam)
+	# Plot names for rows
+	if(namerows){
+		textfun(xseq=xseq, yseq=yseq, labels=rownam, type="row")
+	}
+	# Custom column name vector provided
+	if(!missing(namecols) & length(namecols)>1){
+		colnames(x) <- namecols
+		namecols <- T
+	}
+	# No column names, using a sequence of column indices
+	else if(is.null(colnames(x))){
+		colnames(x) <- 1:ncol(x)
+	}
+	colnam <- colnames(x)[order.col]
+	xseq <- seq(from=xlim[1], to=xlim[2], length.out=(ncol(x)+1))
+	xseq <- unlist(lapply(1:(length(xseq)-1), FUN=function(z) mean(c(xseq[z], xseq[z+1]))))
+	yseq <- rep((bottomlim[2] + bottomlim[1])/2, times=(ncol(x)))
+	coltext <- list(xseq = xseq, yseq = yseq, colnam = colnam)
+	# Plot names for columns
+	if(namecols){
+		textfun(xseq=xseq, yseq=yseq, labels=colnam, type="col")
+	}
+	
+	# Option values may be useful for plotting color key, annotations etc, so return invisibly
+	invisible(list(
+		x = x, 
+		xmatseq = xmatseq,
+		ymatseq = ymatseq,
+		xlim = xlim,
+		ylim = ylim,
+		leftlim = leftlim,
+		rightlim = rightlim,
+		toplim = toplim,
+		bottomlim = bottomlim,
+		dend.row = dend.row, 
+		dend.col = dend.col, 
+		order.row = order.row, 
+		order.col = order.col, 
+		rowtext = rowtext, 
+		coltext = coltext, 
+		colors=col, 
+		nbins = nbins, 
+		valseq = valseq, 
+		intervalmat = intervalmat
+	))
 }
+
+# Function for plotting 'hmap' colour key
+hmap.key <- function(
+	# The invisible object returned by 'hmap' function for plotting parameters
+	h,
+	# Coordinates where the key box should be
+	x0 = h$leftlim[1],
+	x1 = h$leftlim[2],
+	y0 = h$toplim[1],
+	y1 = h$toplim[2],
+	# Limits for the x-axis of the color key
+	xlim = range(h$valseq),
+	# y-axis ratio between value labels and the colors in the key box with top:bottom
+	ratio = 0.5,
+	# ratio in y-axis for value ticks
+	tick = 0.1,
+	# Values to annotate
+	at = seq(from=min(h$valseq), to=max(h$valseq), length.out=5),
+	# Should the key box be bounded ("o" is yes, "c" just colors box, "n" omits box)
+	bty = "c",
+	# Text size
+	cex = 0.5,
+	# Text position
+	pos = 3#,
+
+	# Additional parameters
+	#...
+){
+	# If user wants to cut color key to specific range
+	xseq <- seq(from=x0, to=x1, length.out=length(h$valseq[h$valseq >= xlim[1] & h$valseq <= xlim[2]]))
+	h$colors <- h$colors[h$valseq >= xlim[1] & h$valseq <= xlim[2]]
+	h$valseq <- h$valseq[h$valseq >= xlim[1] & h$valseq <= xlim[2]]
+	# Compute y-axis middlepoints
+	ymid <- y1-ratio*(y1-y0) # Middle point between color box and annotation box
+	ytick <- y1-ratio*(y1-y0)-tick*(y1-y0) # Further tick annotated values from middle point downwards
+	# Key colors
+	for(i in 1:(length(xseq)-1)){
+		rect(xleft=xseq[i], xright=xseq[i+1], ybottom=ymid, ytop=y1, col=h$colors[i], border=NA)
+	}
+	# Black boundary boxes
+	if(bty=="o"){
+		rect(xleft=x0, xright=x1, ybottom=y0, ytop=y1, border="black", col=NA)
+	}else if(bty=="c"){
+		rect(xleft=x0, xright=x1, ybottom=y1-ratio*(y1-y0), ytop=y1, border="black", col=NA)
+	}
+	# Value ticks and annotations
+	where <- findInterval(at, vec=h$valseq)
+	where <- where[!where==0]
+	for(w in 1:length(where)){
+		text(x=xseq[where[w]], y=y0, pos=pos, labels=round(at[w],3), cex=cex) # Text labels above lower text boundary box
+		segments(x0=xseq[where[w]], x1=xseq[where[w]], y0=ymid, y1=ytick, col="black")
+	}
+	
+	invisible(list(where = where, xseq = xseq, x0 = x0, x1 = x1, y0 = y0, y1 = y1, ymid = ymid, ytick = ytick))
+}
+
+
+# Function for annotating rows and columns in plots by 'hmap'
+hmap.annotate <- function(
+	# The invisible object returned by 'hmap' function for plotting parameters
+	h,
+	
+	# ROWS
+	# Groups per ROW to annotate, each unique value is assigned to a unique instance of the color palette (preferably a factor)
+	rw,
+	# Count of labels for ROWS
+	rw.n = length(unique(rw)),
+	# Color palette for ROWS
+	rw.col = rainbow(rw.n, start=0.05, end=0.5),
+	# If user desired plotted rectangles instead of pch-based symbols, use the widths and heights indicated here
+	rw.wid,
+	rw.hei,
+	# Symbols for ROWS
+	rw.pch,
+	# x and y-axis coordinates to where the symbols ought to be plotted
+	# ROWS
+	rw.x = rep(min(h$rightlim), times=length(h$rowtext$xseq)),
+	rw.y = h$rowtext$yseq,
+	rw.shift = c(0.02, 0),
+	# Position for a pre-generated row annotation legend, if NA or NULL then this legend is omitted
+	#rw.pos = c(h$xlim[1],h$ylim[1]),
+
+	# COLUMNS
+	# Groups per COLUMN to annotate, each unique value is assigned to a unique instance of the color palette (preferably a factor)
+	cl,
+	# Count of labels for COLUMNSs
+	cl.n = length(unique(cl)),
+	# Color palette for COLUMNs
+	cl.col = rainbow(cl.n, start=0.55, end=1.0),
+	# If pch is present, the symbols in it are used for annotating the unique labels through recycling, if omitted then use pars rwid & rhei and clid & chei instead
+	# If user desired plotted rectangles instead of pch-based symbols, use the widths and heights indicated here
+	cl.wid,
+	cl.hei,
+	# Symbols for COLUMNS
+	cl.pch,
+	# x and y-axis coordinates to where the symbols ought to be plotted
+	# COLUMNS
+	cl.x = h$coltext$xseq,
+	cl.y = rep(max(h$bottomlim), times=length(h$coltext$yseq)),
+	cl.shift = c(0, -0.02),
+	# Position for a pre-generated row annotation legend, if NA or NULL then this legend is omitted
+	#cl.pos = c(h$xlim[1],h$ylim[1]),
+
+	# Additional parameters
+	...
+){
+	if(!missing(rw)){
+		#if(missing(rw.wid) & missing(rw.hei)){
+		if(!missing(rw.pch)){
+			points(rw.x + rw.shift[1], rw.y + rw.shift[2], pch=rw.pch, col=rw.col[as.numeric(as.factor(rw))][h$order.row], ...)
+		}else{
+			for(i in 1:(length(h$ymatseq)-1)) {
+				#rect(xleft=min(rw.wid), xright=max(rw.wid), ytop=h$ymatseq[i], ybottom=h$ymatseq[i+1], col=rw.col[as.numeric(as.factor(rw))][h$order.row][i], border=rw.col[as.numeric(as.factor(rw))][h$order.row][i], ...)
+				rect(xleft=min(rw.wid), xright=max(rw.wid), ytop=h$ymatseq[i], ybottom=h$ymatseq[i+1], col=rw.col[as.numeric(as.factor(rw))][h$order.row][i], density=NA, ...)
+			}
+		}
+		#if(!missing(rw.pos)){
+		#
+		#}
+	}
+	if(!missing(cl)){
+		#if(missing(cl.wid) & missing(cl.hei)){
+		if(!missing(cl.pch)){
+			points(cl.x + cl.shift[1], cl.y + cl.shift[2], pch=cl.pch, col=cl.col[as.numeric(as.factor(cl))][h$order.col], ...)
+		}else{
+			for(i in 1:(length(h$xmatseq)-1)) {
+				rect(xleft=h$xmatseq[i], xright=h$xmatseq[i+1], ytop=max(cl.hei), ybottom=min(cl.hei), col=cl.col[as.numeric(as.factor(cl))][h$order.col][i], density=NA, ...)
+			}
+		}
+		#if(!missing(cl.pos)){
+		#
+		#}
+	}
+
+}
+
 
 # Extend range -function (based on 'extendrange' from grDevices) with forced symmetry around a point
 extendsymrange <- function(

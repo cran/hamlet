@@ -53,9 +53,6 @@ The wide-format here presented the longitudinal measurements for PSA and Body We
 \source{
 Knuuttila M, Yatkin E, Kallio J, Savolainen S, Laajala TD, et al. (2014) Castration induces upregulation of intratumoral androgen biosynthesis and androgen receptor expression in orthotopic VCaP human prostate cancer xenograft model.  Am J Pathol. Accepted
 }
-\references{
-Laajala TD, Kaur A, Knuuttila M, Westermarck J, et al. (2014) Optimal Matching, Randomization and Statistical Modeling of Hierarchical Baseline Variables in Preclinical Cancer Studies. Submitted
-}
 \seealso{
 \code{\link{vcaplong}}
 }

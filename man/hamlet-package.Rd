@@ -6,17 +6,17 @@
 Hierarchical Optimal Matching and Machine Learning Toolbox
 }
 \description{
-This package offers helpful functions and algorithms for solving optimal matching tasks in the context of preclinical cancer studies. Furthermore, various helper and plotting functions are provided for unsupervised and supervised machine learning.
+This package provides functions and algorithms for solving optimal matching tasks in the context of preclinical cancer studies. Further, various help and plotting functions are provided for unsupervised and supervised machine learning as well as longitudinal modeling of tumor growth response patterns.
 }
 \details{
 \tabular{ll}{
 Package: \tab hamlet\cr
 Type: \tab Package\cr
-Version: \tab 0.7\cr
-Date: \tab 2014-05-27\cr
+Version: \tab 0.9.4\cr
+Date: \tab 2015-08-04\cr
 License: \tab GPL (>= 2)\cr
 }
-The package 'hamlet' offers useful functions for optimal matching, randomization, and mixed-effects modeling in preclinical cancer studies. The functions are divided to 'match'-prefix indicating optimal matching intended functions, 'mem' indicating mixed-effects modeling, 'mix' for mixed type (numerical and categorical) data analysis, and rest that are various plotting and helper functions for various tasks.
+The package 'hamlet' offers functions for optimal matching, randomization, and mixed-effects modeling in preclinical cancer studies. The functions are divided to 'match'-prefix indicating optimal matching intended functions, 'mem' indicating mixed-effects modeling, 'mix' for mixed type (numerical and categorical) data analysis, and rest that are various plotting and helper functions for various tasks.
 }
 \author{
 Teemu Daniel Laajala
@@ -24,9 +24,12 @@ Teemu Daniel Laajala
 Maintainer: Teemu Daniel Laajala <teelaa@utu.fi>
 }
 \references{
-Knuuttila M, Yatkin E, Kallio J, Savolainen S, Laajala TD, et al. (2014) Castration induces upregulation of intratumoral androgen biosynthesis and androgen receptor expression in orthotopic VCaP human prostate cancer xenograft model.  Am J Pathol. Accepted
+Knuuttila M, Yatkin E, Kallio J, Savolainen S, Laajala TD, et al. (2014) 
+Castration induces upregulation of intratumoral androgen biosynthesis and androgen receptor expression in orthotopic VCaP human prostate cancer xenograft model.  
+Am J Pathol. 2014 Aug;184(8):2163-73. doi: 10.1016/j.ajpath.2014.04.010. 
 
-Laajala TD, Kaur A, Knuuttila M, Westermarck J, et al. (2014) Optimal Matching, Randomization and Statistical Modeling of Hierarchical Baseline Variables in Preclinical Cancer Studies. Submitted
+Laajala TD, Jumppanen M, Huhtaniemi R, Kaur A, Knuuttila M, et al. Improving the statistical analysis and design of preclinical animal studies: power 
+calculations, random allocation and matched inference of intervention effects. Submitted
 }
 \keyword{ package }
 \examples{

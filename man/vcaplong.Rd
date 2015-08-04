@@ -9,8 +9,9 @@ The long-format of the VCaP experiment PSA-measurements may be used to model lon
 }
 \usage{data(vcaplong)}
 \format{
-  A data frame with 225 observations on the following 10 variables.
+  A data frame with 225 observations on the following 11 variables.
   \describe{
+    \item{\code{PSA}}{Raw PSA (prostate-specific antigen) measurements with unit (ug/l)}
     \item{\code{log2PSA}}{Log2-transformed PSA (prostate-specific antigen) measurements with unit (log2 ug/l)}
     \item{\code{BW}}{Body weights (g)}
     \item{\code{Submatch}}{A grouping factor for indicating which measurements belong to individuals that were part of the same submatch prior to interventions}
@@ -28,9 +29,6 @@ Notice that the long-format is suitable for modeling longitudinal measurements. 
 }
 \source{
 Knuuttila M, Yatkin E, Kallio J, Savolainen S, Laajala TD, et al. (2014) Castration induces upregulation of intratumoral androgen biosynthesis and androgen receptor expression in orthotopic VCaP human prostate cancer xenograft model.  Am J Pathol. Accepted
-}
-\references{
-Laajala TD, Kaur A, Knuuttila M, Westermarck J, et al. (2014) Optimal Matching, Randomization and Statistical Modeling of Hierarchical Baseline Variables in Preclinical Cancer Studies. Submitted
 }
 \examples{
 data(vcaplong)

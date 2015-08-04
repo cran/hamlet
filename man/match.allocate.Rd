@@ -18,7 +18,7 @@ A binary matching matrix or a matching vector given by match.bb-function.
 A vector where each element indicates to which group the observation was randomized to. The group names are "Group_A", "Group_B", "Group_C", ... until 'g' letters, where 'g' was the size of submatches.
 }
 \references{
-Laajala TD, Kaur A, Knuuttila M, Westermarck J, et al. (2014) Optimal Matching, Randomization and Statistical Modeling of Hierarchical Baseline Variables in Preclinical Cancer Studies. Submitted
+Laajala TD, Kaur A, Knuuttila M, Aho E, Oksala R, et al. (2014) Optimal Matching, Randomization and Statistical Modeling of Hierarchical Baseline Variables in Preclinical Cancer Studies. Submitted
 }
 \author{
 Teemu Daniel Laajala <teelaa@utu.fi>

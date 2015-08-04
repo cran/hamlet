@@ -1,4 +1,136 @@
-# Branch & Bound algorithm for multigroup non-bipartite optimal matching 
+#
+# Generalized tools for bipartite and non-bipartite matching
+#
+
+
+# A generic framework for the genetic algorithm for performing multigroup non-bipartite matching (local optimum)
+match.ga <- function(
+	# Distance/dissimilarity matrix d
+	d,
+	# Subgroup size; g=2 is pairs, g=3 is triplets, etc
+	g,
+	# If user wants to provide existing population matrix, pops-parameter can be used
+	pops,
+	# Number of generations
+	generations = 100,
+	# Population size, i.e. number of solutions simulated per each generation
+	popsize = 100,
+	# Number of mutations per generation
+	nmutate = 100,
+	# Number of solution deaths (and thus breeding) per generation
+	ndeath = 30,
+	# Type, do we desire minimization ("min") or maximization ("max")
+	type="min",
+	# Mutation function, how point mutations happen for a solution vector 'x'	
+	# Should return an eligible solution vector
+	mutate = hamlet:::.ga.mutate,
+	# How breeding is done when two solution vectors 'x' and 'y' are combined to produce offspring
+	# Should return an eligible solution vector	
+	breed = hamlet:::.ga.breed
+	,
+	# How to compute weighting for probabilities to survive / breed / get mutations
+	weight = hamlet:::.ga.weight
+	,	
+	# The way the fitness value of a solution is computed - most likely the value of the function to be optimized
+	# Input 'x' is a solution vector of submatches per each individual
+	# Should return a single value that describes fitness of a solution (higher -> better)
+	fitness = hamlet:::.ga.fitness
+	,
+	# Step function that produces the next generation of solutions
+	# pops: Matrix of previous generation solutions (rows = individuals, cols = different matching solution vectors)
+	# fitnesses: Vector of fitness values for the solutions (length = number of columns in 'pops')
+	step = hamlet:::.ga.step
+	,
+	# Generate random starting conditions; a matrix with nrow(d), ncol(d) amount of rows, and 'popsize' amount of columns
+	# Thus, columns depict the solution vectors living in the genetic algorithm
+	# Rows are the actual individuals in the study
+	initialize = hamlet:::.ga.init
+	,
+	# If plots should be given during algorithm
+	progplot = T,
+	# If a generation-plot should be done to illustrate advancement of the algorithm
+	plot = T,
+	# Level of verbosity; <0 means completely silent, >=0 means normal verbosity, >=1 means also additional info
+	verb = 0,
+	# After how many generations a new progress plot is done
+	progress = 500,
+	...
+){
+	# Make sure d is a matrix
+	d <- as.matrix(d)
+	# Make sure g is an integer
+	g <- round(g, 0)
+	# Handling invalid input 
+	if(missing(g)) stop("Parameter 'g' missing, indicate subgroup size with an integer")
+	if(!nrow(d) %% g == 0 | !ncol(d) %% g == 0) stop("Number of rows and columns in 'd' should be dividable by 'g'")
+	if(!nrow(d) == ncol(d)) stop("Distance matrix 'd' should be a square matrix")
+
+	sols <- list()
+	best <- ifelse(type=="min", Inf, -Inf) # Cost of best found solution so far
+	bestsol <- NA # Best found solution so far
+	quants <- matrix(nrow=5, ncol=generations) # Matrix for storing and plotting solution quantiles per time
+	rownames(quants) <- c("0%", "25", "50%", "75%", "100%")
+	# Initial values (initial population matrix can also be supplied by the user with param 'pops')	
+	if(missing(pops)) pops <- initialize(popsize = popsize, d = d, g = g)
+	# Compute fitnesses and weights
+	fitnesses <- apply(pops, MARGIN=2, FUN=function(z) fitness(z, d=d))
+	weights <- weight(fitnesses)
+	# Start iterating through the genetic algorithm
+	for(i in 1:generations){
+		sols <- list(pops = pops, fitnesses = fitnesses, weights = weights)
+		new <- step(pops = pops, fitnesses = fitnesses, weights = weights, nmutate = nmutate, ndeath = ndeath, mutate = mutate, breed = breed, fitness = fitness, weight = weight, d = d)
+		pops <- new$pops
+		fitnesses <- new$fitnesses
+		weights <- new$weights
+		quants[,i] <- quantile(fitnesses)
+		# New best found solution
+		if(ifelse(type=="min", quants[1,i]<best, quants[1,i]>best)){
+			best <- ifelse(type=="min", quants[1,i], quants[5,i])
+			bestsol <- pops[,which(fitnesses==best)[1]]
+		}
+		# Print progress information
+		if(i %% progress == 0){ 
+			print(paste("Generation", i, "of", generations)) 			
+			print("Current quantiles:") 
+			print(quants[,i])
+			print("Best found solution vector:")
+			print(bestsol)
+			print("Best found solution cost:")
+			print(best)
+			# Plot progress quantiles
+			if(progplot){
+				plot(quants[3,1:i], type="l", ylim=extendrange(quants[,1:i]), xlab="Generation", ylab="Fitness")
+				points(quants[1,1:i], type="l", col="red")
+				points(quants[5,1:i], type="l", col="red")
+				points(quants[2,1:i], type="l", col="orange", lty="dashed")
+				points(quants[4,1:i], type="l", col="orange", lty="dashed")
+				legend("topleft", horiz=T, bty="n", col=c("red", "orange", "black"), lty=c("solid", "dashed", "solid"), legend=c("Min/Max", "2/4 Quant.", "Median"), cex=0.7)
+			}
+		}
+	}
+	# Last iteration collecting from the results in the for-loop
+	sols <- list(pops = pops, fitnesses = fitnesses, weights = weights)
+	
+	# Plot the final progress plot
+	if(plot){
+		plot(quants[3,], type="l", ylim=extendrange(quants[,1:i]), xlab="Generation", ylab="Fitness")
+		points(quants[1,], type="l", col="red")
+		points(quants[5,], type="l", col="red")
+		points(quants[2,], type="l", col="orange", lty="dashed")
+		points(quants[4,], type="l", col="orange", lty="dashed")
+		legend("topleft", horiz=T, bty="n", col=c("red", "orange", "black"), lty=c("solid", "dashed", "solid"), legend=c("Min/Max", "2/4 Quant.", "Median"), cex=0.7)
+	}
+	if(verb>=0){
+		print("Best found solution vector:")
+		print(bestsol)
+		print("Best found solution cost:")
+		print(best)
+	}
+
+	list(sols, bestsol, best)
+}
+
+# Branch & Bound algorithm for multigroup non-bipartite optimal matching (global optimum)
 match.bb <- function(
 	# Symmetric distance/dissimilarity matrix d
 	d,

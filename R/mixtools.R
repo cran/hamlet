@@ -1,3 +1,7 @@
+#
+# Tools for the analysis of mixed data
+#
+
 # Apply an R-function to the numeric columns of a data.frame
 # Useful for such functions as:
 # scale - scaling numeric columns (x - mean / sd)

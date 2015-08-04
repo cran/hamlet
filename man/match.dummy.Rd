@@ -17,7 +17,7 @@ A data.frame of the original observations, to which column averaged new dummy ob
 N times N distance/dissimilarity matrix, to which zero distance sinks are added
 }
   \item{g}{
-The desired number of elements per each submatch, i.e. the size of the clusters. The number of added dummies is the smallest number of additions that fulfills (N+dummy)%%g == 0
+The desired number of elements per each submatch, i.e. the size of the clusters. The number of added dummies is the smallest number of additions that fulfills (N+dummy)\%\%g == 0
 }
 }
 \value{
