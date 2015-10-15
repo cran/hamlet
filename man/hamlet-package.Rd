@@ -12,8 +12,8 @@ This package provides functions and algorithms for solving optimal matching task
 \tabular{ll}{
 Package: \tab hamlet\cr
 Type: \tab Package\cr
-Version: \tab 0.9.4\cr
-Date: \tab 2015-08-04\cr
+Version: \tab 0.9.4-2\cr
+Date: \tab 2015-10-15\cr
 License: \tab GPL (>= 2)\cr
 }
 The package 'hamlet' offers functions for optimal matching, randomization, and mixed-effects modeling in preclinical cancer studies. The functions are divided to 'match'-prefix indicating optimal matching intended functions, 'mem' indicating mixed-effects modeling, 'mix' for mixed type (numerical and categorical) data analysis, and rest that are various plotting and helper functions for various tasks.
