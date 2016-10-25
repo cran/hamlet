@@ -41,7 +41,7 @@ performed. The excluded tumors had either non-existant PSA, non-detectable tumor
 or extremely large tumors (volume above 700 mm^3).
 }
 \source{
-Huhtaniemi R, et al. Manuscript in preparation.
+Laajala TD, Jumppanen M, Huhtaniemi R, Fey V, Kaur A, et al. (2016) Optimized design and analysis of preclinical intervention studies in vivo. Sci Rep. 2016 Aug 2;6:30723. doi: 10.1038/srep30723.
 }
 \examples{
 data(orxwide)

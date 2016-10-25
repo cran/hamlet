@@ -39,7 +39,7 @@ one should use observations with the positive 'TrDay'-values, as this indicates 
 For mixed-effects modeling, the fields 'ID', 'PSA' (or 'log2PSA'), 'TrDay', and group-specific indicators should be included.
 }
 \source{
-Huhtaniemi R, et al. Manuscript in preparation.
+Laajala TD, Jumppanen M, Huhtaniemi R, Fey V, Kaur A, et al. (2016) Optimized design and analysis of preclinical intervention studies in vivo. Sci Rep. 2016 Aug 2;6:30723. doi: 10.1038/srep30723.
 }
 \examples{
 data(orxlong)

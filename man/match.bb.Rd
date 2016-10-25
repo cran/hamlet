@@ -45,9 +45,10 @@ The function returns a list of objects, where elements are
 \item{solution }{The resulting matching vector where each element indicates the submatch where the observation was placed}
 \item{cost }{Final cost value of the target function in the minimization task}
 }
-\references{
-Laajala TD, Kaur A, Knuuttila M, Aho E, Oksala R, et al. (2014) Optimal Matching, Randomization and Statistical Modeling of Hierarchical Baseline Variables in Preclinical Cancer Studies. Submitted
-}
+%\references{
+%Laajala, T.D. et al. Optimized design and analysis of preclinical intervention studies in vivo. Submitted (2016)
+%Laajala TD, Kaur A, Knuuttila M, Aho E, Oksala R, et al. (2014) Optimal Matching, Randomization and Statistical Modeling of Hierarchical Baseline Variables in Preclinical Cancer Studies. Submitted
+%}
 \author{
 Teemu Daniel Laajala <teelaa@utu.fi>
 }

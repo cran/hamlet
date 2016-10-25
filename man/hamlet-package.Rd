@@ -12,8 +12,8 @@ This package provides functions and algorithms for solving optimal matching task
 \tabular{ll}{
 Package: \tab hamlet\cr
 Type: \tab Package\cr
-Version: \tab 0.9.4-2\cr
-Date: \tab 2015-10-15\cr
+Version: \tab 0.9.5\cr
+Date: \tab 2016-03-01\cr
 License: \tab GPL (>= 2)\cr
 }
 The package 'hamlet' offers functions for optimal matching, randomization, and mixed-effects modeling in preclinical cancer studies. The functions are divided to 'match'-prefix indicating optimal matching intended functions, 'mem' indicating mixed-effects modeling, 'mix' for mixed type (numerical and categorical) data analysis, and rest that are various plotting and helper functions for various tasks.
@@ -24,12 +24,9 @@ Teemu Daniel Laajala
 Maintainer: Teemu Daniel Laajala <teelaa@utu.fi>
 }
 \references{
-Knuuttila M, Yatkin E, Kallio J, Savolainen S, Laajala TD, et al. (2014) 
-Castration induces upregulation of intratumoral androgen biosynthesis and androgen receptor expression in orthotopic VCaP human prostate cancer xenograft model.  
-Am J Pathol. 2014 Aug;184(8):2163-73. doi: 10.1016/j.ajpath.2014.04.010. 
+Laajala TD, Jumppanen M, Huhtaniemi R, Fey V, Kaur A, et al. (2016) Optimized design and analysis of preclinical intervention studies in vivo. Sci Rep. 2016 Aug 2;6:30723. doi: 10.1038/srep30723.
 
-Laajala TD, Jumppanen M, Huhtaniemi R, Kaur A, Knuuttila M, et al. Improving the statistical analysis and design of preclinical animal studies: power 
-calculations, random allocation and matched inference of intervention effects. Submitted
+Knuuttila M, Yatkin E, Kallio J, Savolainen S, Laajala TD, et al. (2014) Castration induces upregulation of intratumoral androgen biosynthesis and androgen receptor expression in orthotopic VCaP human prostate cancer xenograft model.  Am J Pathol. 2014 Aug;184(8):2163-73. doi: 10.1016/j.ajpath.2014.04.010.
 }
 \keyword{ package }
 \examples{
