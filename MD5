@@ -1,4 +1,4 @@
-dc4a3cc57d7223bd54f3d50382b7ed56 *DESCRIPTION
+647b3575af2d5a1833fba604aa496d9a *DESCRIPTION
 df10a6d86d3757734e38cc65ba27e416 *NAMESPACE
 a6dd4a60ade47bf54b496bc3b415f08d *R/internal.R
 17af2c694409912e01dd4bec8967daba *R/matchtools.R
@@ -12,13 +12,13 @@ e308c3ffd59cb22e32ea70a150a2a0b6 *data/orxwide.rda
 c96c0e42f042f77b2ef592ad7a2ae9a2 *data/vcaplong.rda
 001a1f6be6f445835cdd17d7591205a0 *data/vcapwide.rda
 92452c794994962d1afda7964cf9c95f *inst/CITATION
-a00fe86a1d992cbc3f7697b76139ffbf *inst/doc/introduction.R
-a4fc0087f7691e23e83c97b963aa0937 *inst/doc/introduction.Rnw
+62b3325d5fd9d6a6d51d8c0af580ad30 *inst/doc/introduction.R
+ba38ff39301f254cb8749bcbabc0d90b *inst/doc/introduction.Rnw
 ebdb503e5645ab9723a41403016dbedd *inst/doc/introduction.pdf
 87b1dec356485fe1293c09ec0bfd2e19 *man/extendsymrange.Rd
 89e58ce7f3ef3bda64d4cf72ea5f6a2b *man/figures/hmapex.pdf
 f985c21e91859e6a0ba0d673ebf6bcee *man/figures/hmapex.png
-334657c5fa5047e257e28b3d3186fee3 *man/hamlet-package.Rd
+a882c3834bfaa77484681d1e2969f598 *man/hamlet-package.Rd
 c0887b9b66f71baa00770e9110793279 *man/hmap.Rd
 12d6039b536542ed7bbd2e96312e9b2f *man/hmap.annotate.Rd
 b3d594b0c1542dd4427f568ab6f40b15 *man/hmap.key.Rd
@@ -51,5 +51,5 @@ bda3f1723bf21241324b640869aa78d2 *vignettes/excelexample.JPG
 734bbf0f928ea6a6889169c1f1449a72 *vignettes/introduction-020.pdf
 66921441aa9f94cc4bf2ff5dd7455f2b *vignettes/introduction-022.pdf
 d8471519a7e84d463779086e59002a69 *vignettes/introduction-023.pdf
-a4fc0087f7691e23e83c97b963aa0937 *vignettes/introduction.Rnw
+ba38ff39301f254cb8749bcbabc0d90b *vignettes/introduction.Rnw
 7eb4714b1c6b7ad08c649e3c5cc30911 *vignettes/workflow.pdf

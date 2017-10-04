@@ -1,5 +1,6 @@
 % \VignetteIndexEntry{Introduction to hamlet}
 \documentclass[a4paper]{article}
+\usepackage{graphicx}
 
 \title{Step-by-step user instructions to the hamlet-package}
 \author{Teemu Daniel Laajala}
@@ -56,7 +57,7 @@ The former \emph{wide} format is useful for summarizing multiple variables when 
 
 \begin{figure}
 \centering
-\includegraphics[resolution=96]{excelexample.JPG}
+\includegraphics{excelexample.JPG}
 \caption{Example Excel-format data, where rows correspond to individuals and columns to different characteristics at baseline. The single sheet data can be easily exported in a text-based format such as CSV. \label{fig:excel}}
 \end{figure}
 
