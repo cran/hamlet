@@ -118,7 +118,7 @@ mem.powersimu <- function(
 	# Additional parameters
 	...
 ){
-	if(!class(fit) %in% c("lme4", "lmerMod", "merModLmerTest")){
+	if(!class(fit) %in% c("lme4", "lmerMod", "merModLmerTest", "lmerModLmerTest")){
 		stop(paste("Invalid class of fit (should be a lme4-object), given class:", class(fit)))
 	}
 	# Set random seed if desired
@@ -182,18 +182,24 @@ mem.powersimu <- function(
 
 				# Try re-fit the lme4 using same the model formula with a new bootstrapped dataset
 				if(verb>=2) print(sampleset)
-				newfit <- try(lme4::lmer(form, data = sampleset), silent=T)
+				### LEGACY, new fitting overrides lme4's with lmerTest's version
+				#newfit <- try(lme4::lmer(form, data = sampleset), silent=T)
+				newfit <- try(lmerTest::lmer(form, data = sampleset), silent=T)
 				# If non-error, presumably a feasible fit
 				if(!class(newfit) %in% c("try-error")){
 					# Extract p-values using the Satterthwaite approximation in lmerTest-package
-					summarized <- lmerTest::summary(newfit)$coefficients
+					#summarized <- lmerTest::summary(newfit)$coefficients
+					### LEGACY from lmerTest::summary, now the call 'anova(newfit)' works
 					# If p-values could be computed in lmerTest
-					if("Pr(>|t|)" %in% colnames(summarized)){
-						summarized[,"Pr(>|t|)"]<0.05
+					#if("Pr(>|t|)" %in% colnames(summarized)){
+					#	summarized[,"Pr(>|t|)"]<0.05
 					# Else if, test statistic approximation using significant: |t|>2
-					}else if("t value" %in% colnames(summarized)){
-						abs(summarized[,"t value"])>2
+					#}else if("t value" %in% colnames(summarized)){
+					#	abs(summarized[,"t value"])>2
 					# Else a fitting error, utilize default inference
+					aovfit <- anova(newfit)
+					if("Pr(>F)" %in% names(aovfit)){
+						aovfit$"Pr(>F)"<0.05
 					}else{
 						rep(default, times=length(lme4::fixef(fit)))
 					}
@@ -209,7 +215,8 @@ mem.powersimu <- function(
 		}))
 		# Name the rows and columns of the power simulation matrix
 		rownames(npmatrix) <- paste("GroupN_", N, "_TotalN_",Ntot, sep="")
-		colnames(npmatrix) <- names(lme4::fixef(fit))
+		# Intercept is omitted from the hypothesis testing
+		colnames(npmatrix) <- names(lme4::fixef(fit))[-which(names(lme4::fixef(fit))=="(Intercept)")]
 	}
 	# Else user only wishes to generate bootstrapped datasets without the re-fitting of the lme4 model
 	else{

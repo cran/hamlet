@@ -101,9 +101,9 @@ datasets where the corresponding fixed effects was detected as statistically sig
 \author{
 Teemu D. Laajala
 }
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
+\note{
+	Please note that the example runs in this document are extremely small due to run time constraints on CRAN. For real power analyses, it is recommended that the N counts would vary e.g. from 5 to 15 with steps of 1 and the amount of bootstrapped datasets would be at least 100.
+}
 \seealso{
 \code{\link{mem.getcomp}}
 }
@@ -121,7 +121,7 @@ fit <- lmer(PSA ~ 1 + DrugWeek + ARN:DrugWeek + (1|ID) + (0 + DrugWeek|ID), data
 set.seed(123)
 # Run a brief power analysis with only a few selected N values and a limited number of bootstrapping
 # Balance strata over the ARN and non-ARN (=Vehicle) so that both contain equal count of individuals
-power <- mem.powersimu(fit, N=c(4, 7, 10), boot=20, strata="ARN", plot=TRUE)
+power <- mem.powersimu(fit, N=c(3, 6, 9), boot=10, strata="ARN", plot=TRUE)
 # Power curves are plotted, along with returning the power matrix at:
 power
 

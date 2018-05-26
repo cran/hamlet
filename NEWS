@@ -1,0 +1,7 @@
+hamlet v0.9.6 (Release date: 2018-05-26)
+==============
+
+Changes:
+
+* Fixed issues with the new interface of the lmerTest-package and its extensions for model objects from the lme4-package
+* Reduced run time of examples, and added notes to user that more precise bootstrapping etc should be conducted in real analyses

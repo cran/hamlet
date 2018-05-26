@@ -98,14 +98,16 @@ The returned list compromises of:
 		\item A value 'best', which is the optimum solution cost value observed during the algorithm.
 	}
 }
+\note{
+	Notice that end quality of the matching based allocation is heavily dependent on providing a feasible matrix D. One should carefully consider choice and tuning of the similarity metric. For example, Euclidean distance without standardization is often not a good choice as it does not normalize the variance of each variable and emphasis is on baseline variables that have a large relative variance.
+	
+	Note that the R-package 'GA' offers a wide range of generalized GA-related tools.
+}
 %\references{
 %% ~put references to the literature/web site here ~
 %}
 \author{
 Teemu Daniel Laajala <teelaa@utu.fi>
-}
-\note{
-The R-package 'GA' offers a wide range of generalized GA-related tools.
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
@@ -119,12 +121,17 @@ data(vcapwide)
 
 # Construct an Euclidean distance example distance matrix using 15 observations from the VCaP study
 d <- as.matrix(dist(vcapwide[1:15,c("PSAWeek10", "BWWeek10")]))
+# Or rather, z-score transform all input variables first
+d2 <- as.matrix(dist(scale(vcapwide[1:15,c("PSAWeek10", "BWWeek10")])))
 
-# Notice that random simulations take place, fixing the seed for reproducibility
+# Notice that random simulations take place, so we will fix the RNG seed for reproducibility
 set.seed(1)
-
-ga <- match.ga(d, g=3)
+# Resulting genetic algorithm progression is plotted by default
+ga <- match.ga(d2, g=3, generations=60)
 str(ga)
+# Submatches, i.e. similar individuals that ought to be allocated to separate groups
+ga[[2]]
+
 }
 
 

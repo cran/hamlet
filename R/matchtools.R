@@ -127,7 +127,7 @@ match.ga <- function(
 		print(best)
 	}
 
-	list(sols, bestsol, best)
+	list(solutions = sols, bestsolution = bestsol, bestfitness = best)
 }
 
 # Branch & Bound algorithm for multigroup non-bipartite optimal matching (global optimum)
